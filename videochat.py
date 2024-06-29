@@ -19,7 +19,7 @@ client = OpenAI()
 if __name__ == "__main__":
 
     # pricing as of March 2024 per 1M tokens read: gpt-3.5-turbo-0125 $0.50, gpt-4-0125-preview $10, gpt-4 $30
-    model_name = "gpt-4-0125-preview" # start with a good model
+    model_name = "gpt-4o-2024-05-13" # start with a good model
     vision_model_name = "gpt-4-vision-preview" # can this take regular text inputs too?
     secondary_model_name = "gpt-3.5-turbo-0125" # switch to a cheaper model if the conversation gets too long
     max_context_length = 16000
