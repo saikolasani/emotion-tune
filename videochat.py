@@ -29,6 +29,12 @@ if __name__ == "__main__":
     transcript_path = "transcript" # full and condensed transcripts are written here at end of session
     if not os.path.exists(transcript_path):
         os.makedirs(transcript_path)
+    
+    # Ensure the directory exists
+    directory = f'{transcript_path}/{start_time_str}'
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
     snapshot_path = "snapshot" # snapshots of camera frames sent to OpenAI are written here
     if not os.path.exists(snapshot_path):
         os.makedirs(snapshot_path)
@@ -47,7 +53,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     gui_app = ChatApp(start_time, chat_window_dims, user_chat_name, assistant_chat_name, chat_queue, chat_timestamps, new_chat_event, end_session_event)
 
-    pipeline = Emolog(start_time, [args.offset, args.offset],f'{transcript_path}/Emili_raw_{start_time_str}') # video processing pipeline
+    pipeline = Emolog(start_time, [args.offset, args.offset],f'{directory}/Emili_raw_{start_time_str}') # video processing pipeline
     user_id = 100000 # set your user ID here
 
     tick_thread = threading.Thread(target=tick)
@@ -58,7 +64,7 @@ if __name__ == "__main__":
 
     sender_thread = threading.Thread(
         target=sender_thread, 
-        args=(model_name, vision_model_name, secondary_model_name, max_context_length, gui_app, transcript_path, start_time_str), 
+        args=(model_name, vision_model_name, secondary_model_name, max_context_length, gui_app, transcript_path, start_time_str, start_time), 
         daemon=True)
     sender_thread.start()
 
