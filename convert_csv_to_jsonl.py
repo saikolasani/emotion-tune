@@ -12,11 +12,21 @@ def csv_to_jsonl(csv_file_path, jsonl_file_path):
         system_message = ""
 
         for row in csv_reader:
-            # Replace all newline characters with a space
+            # Concatenate the content column without the column name and other columns with their names
             content = row["content"].replace('\n', ' ').replace('\r', ' ').strip()
+            additional_content = " ".join(
+                [f"{key}: {str(value)}" for key, value in row.items() if
+                 key not in ["content", "Conv_id", "time", "role", "user_id"]]
+            )
+            if row["role"] == "user":
+                id = str(row["user_id"])
+                id_content = f"user_id: {id}"
+                full_content = f"{content} {id_content} {additional_content}".strip()
+            else:
+                full_content = f"{content} {additional_content}".strip()
 
             if row["role"] == "system":
-                system_message += content + " "
+                system_message += full_content + " "
                 continue
 
             if system_message:
@@ -25,7 +35,7 @@ def csv_to_jsonl(csv_file_path, jsonl_file_path):
 
             message = {
                 "role": row["role"],
-                "content": content
+                "content": full_content
             }
             if row["role"] == "assistant":
                 message["weight"] = 1 if row["flag"].lower() == "true" else 0
