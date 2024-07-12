@@ -1,4 +1,5 @@
 venv/
-tts_audio/
-transcript/
-snapshot/
+tts_audio/*
+transcript/*
+snapshot/*
+
