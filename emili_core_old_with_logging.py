@@ -218,7 +218,7 @@ def assembler_thread(start_time,snapshot_path,pipeline, user_id): # prepends emo
 
         new_message_event.set()  # Signal new message to the sender thread
 
-def sender_thread(model_name, vision_model_name, secondary_model_name, max_context_length, gui_app, transcript_path, start_time_str): 
+def sender_thread(model_name, vision_model_name, secondary_model_name, max_context_length, gui_app, transcript_path, start_time_str, start_time): 
         # sends messages to OpenAI API
     messages = deepcopy(dialogue_start) 
     full_transcript = deepcopy(dialogue_start)
@@ -270,7 +270,7 @@ def sender_thread(model_name, vision_model_name, secondary_model_name, max_conte
             response_length = full_response.usage.completion_tokens # number of tokens in the response
             total_length = full_response.usage.total_tokens # total tokens used
         #print("response length", response_length)
-        new_message = {"role": "assistant", "content": response}
+        new_message = {"role": "assistant", "content": response,"time": time_since(start_time)//100}
         gui_app.signal.new_message.emit(new_message) # Signal GUI to display the new chat
         messages,full_transcript = add_message(new_messages=[[new_message]], new_full_messages=[[new_message]],transcripts=[messages,full_transcript],signal=gui_app.signal)
         # if model_name != secondary_model_name and total_length > 0.4*max_context_length:
@@ -294,11 +294,11 @@ def sender_thread(model_name, vision_model_name, secondary_model_name, max_conte
             audio_thread.start()
 
     # End of session. Write full and condensed transcripts to file
-    filename = f"{transcript_path}/Emili_{start_time_str}.json"
+    filename = f"{transcript_path}/{start_time_str}/Emili_{start_time_str}.json"
     with open(filename, "w") as file:
         json.dump(full_transcript, file, indent=4)
     print(f"Transcript written to {filename}")
-    with open(f"{transcript_path}/Emili_{start_time_str}_condensed.json", "w") as file:
+    with open(f"{transcript_path}/{start_time_str}/Emili_{start_time_str}_condensed.json", "w") as file:
         json.dump(messages, file, indent=4)
 
 def first_sentence(text):
@@ -518,7 +518,7 @@ class Emolog(DetectMiniXceptionFER): # video pipeline for facial emotion recogni
         self.start_time = start_time
         self.current_frame = None # other threads have read access
         self.frame_lock = threading.Lock()  # Protects access to current_frame
-        self.log_filename = log_filename
+        self.log_filename = log_filename+".txt"
         self.log_file = open(log_filename, "w")
 
     def get_current_frame(self):
