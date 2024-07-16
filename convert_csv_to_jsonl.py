@@ -1,11 +1,10 @@
 import csv
 import json
+import os
 
-
-def csv_to_jsonl(csv_file_path, jsonl_file_path):
-    with open(csv_file_path, 'r') as csv_file, open(jsonl_file_path, 'w') as jsonl_file:
+def process_csv_file(csv_file_path, messages):
+    with open(csv_file_path, 'r') as csv_file:
         csv_reader = csv.DictReader(csv_file)
-        messages = []
         system_message = ""
 
         for row in csv_reader:
@@ -36,9 +35,21 @@ def csv_to_jsonl(csv_file_path, jsonl_file_path):
         if system_message:
             messages.append({"role": "system", "content": system_message.strip()})
 
+
+def csv_to_jsonl(input_dir, jsonl_file_path):
+    messages = []
+
+    for root, dirs, files in os.walk(input_dir):
+        for filename in files:
+            if filename.startswith('flagged_') and filename.endswith('.csv') and not filename.endswith('_condensed.csv'):
+                csv_file_path = os.path.join(root, filename)
+                process_csv_file(csv_file_path, messages)
+
+    with open(jsonl_file_path, 'w') as jsonl_file:
         jsonl_file.write(json.dumps({"messages": messages}) + '\n')
 
+
 if __name__ == "__main__":
-    csv_file_path = 'flagged_20240705.csv'  # Replace with the path to your CSV file
-    jsonl_file_path = 'converted_output.jsonl'  # Replace with the desired output JSONL file path
-    csv_to_jsonl(csv_file_path, jsonl_file_path)
+    input_dir = 'test_script'  # Replace with the path to your directory
+    jsonl_file_path = 'converted_output_2.jsonl'  # Replace with the desired output JSONL file path
+    csv_to_jsonl(input_dir, jsonl_file_path)
