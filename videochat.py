@@ -19,7 +19,7 @@ client = OpenAI()
 if __name__ == "__main__":
 
     # pricing as of March 2024 per 1M tokens read: gpt-3.5-turbo-0125 $0.50, gpt-4-0125-preview $10, gpt-4 $30
-    model_name = "gpt-4o-2024-05-13" # start with a good model
+    model_name = "gpt-4-0125-preview" # start with a good model
     vision_model_name = "gpt-4-vision-preview" # can this take regular text inputs too?
     secondary_model_name = "gpt-3.5-turbo-0125" # switch to a cheaper model if the conversation gets too long
     max_context_length = 16000
@@ -53,10 +53,8 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     gui_app = ChatApp(start_time, chat_window_dims, user_chat_name, assistant_chat_name, chat_queue, chat_timestamps, new_chat_event, end_session_event)
 
-
     pipeline = Emolog(start_time, [args.offset, args.offset],f'{directory}/Emili_raw_{start_time_str}') # video processing pipeline
     user_id = 100000 # set your user ID here
-
 
     tick_thread = threading.Thread(target=tick)
     tick_thread.start()
@@ -65,10 +63,8 @@ if __name__ == "__main__":
     EMA_thread.start()
 
     sender_thread = threading.Thread(
-      
-        target=sender_thread,
-        args=(model_name, vision_model_name, secondary_model_name, max_context_length, gui_app, transcript_path, start_time_str),
-
+        target=sender_thread, 
+        args=(model_name, vision_model_name, secondary_model_name, max_context_length, gui_app, transcript_path, start_time_str, start_time), 
         daemon=True)
     sender_thread.start()
 
@@ -110,7 +106,7 @@ if __name__ == "__main__":
  #   print("Timer thread joined.") # won't join while sleeping
     print("Video thread closed.")
     new_chat_event.set() # signal assembler thread to stop waiting
-    assembler_thread.join()
+    assembler_thread.join() 
     print("Assembler thread joined.")
     new_message_event.set() # signal sender thread to stop waiting
     sender_thread.join()
@@ -120,5 +116,5 @@ if __name__ == "__main__":
     print("EMA thread joined.")
     tick_thread.join()
     print("Tick thread joined.")
-
+        
     print("Session ended.")
