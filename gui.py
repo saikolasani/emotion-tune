@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QSpinBox, QMessageBox, QDialog, QPushButton, QCheckBox, QMainWindow, QTabWidget, QWidget, QVBoxLayout, \
+from PyQt5.QtWidgets import QHBoxLayout, QSpinBox, QMessageBox, QDialog, QPushButton, QCheckBox, QMainWindow, QTabWidget, QWidget, QVBoxLayout, \
     QTextEdit, QLineEdit, QLabel, QVBoxLayout, QSizePolicy
 from PyQt5.QtCore import Qt, QObject, pyqtSignal, QTimer, QSize
 from PyQt5.QtGui import QImage, QPixmap, QTransform
@@ -39,10 +39,10 @@ def create_chat_evaluation():
             self.layout.addWidget(self.repetitiveness_rating)
 
             # Easy-to-understand Rating
-            self.layout.addWidget(QLabel("Easy-to-understand:"))
-            self.easy_to_understand_rating = QSpinBox()
-            self.easy_to_understand_rating.setRange(1, 10)
-            self.layout.addWidget(self.easy_to_understand_rating)
+            self.layout.addWidget(QLabel("Intent:"))
+            self.intent_rating = QSpinBox()
+            self.intent_rating.setRange(1, 10)
+            self.layout.addWidget(self.intent_rating)
 
             # Submit Button
             self.submit_button = QPushButton("Submit")
@@ -55,7 +55,7 @@ def create_chat_evaluation():
             self.evaluation = {
                 "Helpfulness": self.helpfulness_rating.value(),
                 "Repetitiveness": self.repetitiveness_rating.value(),
-                "Easy-to-understand": self.easy_to_understand_rating.value()
+                "Intent": self.intent_rating.value()
             }
             self.accept()  # Close the dialog
 
@@ -64,16 +64,24 @@ def create_chat_evaluation():
     return dialog.evaluation if result == QDialog.Accepted else None
 
 
-def create_emotion_survey(title="Emotion Survey"):
+def create_emotion_survey(title="Emotion Survey", pre_chat=False):
     class EmotionSurvey(QDialog):
         def __init__(self):
             super().__init__()
-            self.selected_emotions = []  # Store selected emotions
+            self.selected_emotions = {}  # Store selected emotions for both questions
             self.setWindowTitle(title)
-            self.setGeometry(300, 300, 300, 400)
+            self.setGeometry(300, 300, 600, 400)
             self.layout = QVBoxLayout()
 
-            self.emotion_checkboxes = []
+            # Main horizontal layout to hold the two sections side by side
+            horizontal_layout = QHBoxLayout()
+
+            # First question: Current feelings
+            current_layout = QVBoxLayout()
+            prompt_label_current = QLabel("How are you feeling right now?(Choose as many as you like)")
+            current_layout.addWidget(prompt_label_current)
+
+            self.current_emotion_checkboxes = []
             emotions = [
                 "Surprised", "Excited", "Angry", "Proud", "Sad", "Annoyed", "Grateful", "Lonely",
                 "Afraid", "Terrified", "Guilty", "Impressed", "Disgusted", "Hopeful", "Confident",
@@ -84,21 +92,49 @@ def create_emotion_survey(title="Emotion Survey"):
 
             for emotion in emotions:
                 checkbox = QCheckBox(emotion)
-                self.emotion_checkboxes.append(checkbox)
-                self.layout.addWidget(checkbox)
+                self.current_emotion_checkboxes.append(checkbox)
+                current_layout.addWidget(checkbox)
+
+            # Add current layout to the main horizontal layout
+            horizontal_layout.addLayout(current_layout)
+
+            # Second question: Desired feelings (only if include_desired is True)
+            if pre_chat:
+                desired_layout = QVBoxLayout()
+                prompt_label_desired = QLabel("How would you like to be feeling?(Choose as many as you like)")
+                desired_layout.addWidget(prompt_label_desired)
+
+                self.desired_emotion_checkboxes = []
+                for emotion in emotions:
+                    checkbox = QCheckBox(emotion)
+                    self.desired_emotion_checkboxes.append(checkbox)
+                    desired_layout.addWidget(checkbox)
+
+                # Add desired layout to the main horizontal layout
+                horizontal_layout.addLayout(desired_layout)
+
+            # Add the horizontal layout to the main layout
+            self.layout.addLayout(horizontal_layout)
 
             self.submit_button = QPushButton("Submit")
             self.submit_button.clicked.connect(self.submit_survey)
             self.layout.addWidget(self.submit_button)
 
             self.setLayout(self.layout)
-
         def submit_survey(self):
-            self.selected_emotions = [cb.text() for cb in self.emotion_checkboxes if cb.isChecked()]
-            if self.selected_emotions:
+            current_emotions = [cb.text() for cb in self.current_emotion_checkboxes if cb.isChecked()]
+            if pre_chat:
+                desired_emotions = [cb.text() for cb in self.desired_emotion_checkboxes if cb.isChecked()]
+            else:
+                desired_emotions = []
+
+            if current_emotions:
+                self.selected_emotions['current'] = current_emotions
+                if pre_chat:
+                    self.selected_emotions['desired'] = desired_emotions
                 self.accept()  # Close the survey dialog
             else:
-                QMessageBox.warning(self, "No Emotions Selected", "Please select at least one emotion.")
+                QMessageBox.warning(self, "Incomplete Survey", "Please select at least one emotion for each question.")
 
     dialog = EmotionSurvey()
     result = dialog.exec_()

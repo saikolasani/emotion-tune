@@ -21,12 +21,9 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
 
     # Show the Pre-Chat Emotion Survey
-    pre_survey_emotions = create_emotion_survey(title="Pre-Chat Emotion Survey")
+    pre_survey_emotions = create_emotion_survey(title="Pre-Chat Emotion Survey", pre_chat=True)
 
     if pre_survey_emotions is not None:
-        # Save pre-chat survey emotions to a file
-        with open('pre_chat_emotions.json', 'w') as f:
-            json.dump(pre_survey_emotions, f)
 
         # Initialize model parameters and paths
         model_name = "gpt-4-0125-preview"  # start with a good model
