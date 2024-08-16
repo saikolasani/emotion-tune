@@ -2,4 +2,7 @@ venv/
 tts_audio/*
 transcript/*
 snapshot/*
+Dataset prep/*
+paz/*
+__pycache__/*
 
