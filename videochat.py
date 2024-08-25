@@ -43,7 +43,7 @@ if __name__ == "__main__":
             os.makedirs(directory)
 
         # Save pre-chat survey emotions to a file
-        with open(f'{directory}/{start_time_str}_pre_chat_emotions.json', 'w') as f:
+        with open(f'{directory}/pre_chat_emotions.json_{start_time_str}', 'w') as f:
             json.dump(pre_survey_emotions, f)
 
         snapshot_path = "snapshot"  # snapshots of camera frames sent to OpenAI are written here
@@ -122,14 +122,14 @@ if __name__ == "__main__":
         post_survey_emotions = create_emotion_survey(title="Post-Chat Emotion Survey")
         if post_survey_emotions is not None:
             # Save post-chat survey emotions to a file
-            with open(f'{directory}/{start_time_str}_post_chat_emotions.json', 'w') as f:
+            with open(f'{directory}/post_chat_emotions.json_{start_time_str}', 'w') as f:
                 json.dump(post_survey_emotions, f)
 
             # Show the Chat Evaluation Form
             chat_evaluation = create_chat_evaluation()
             if chat_evaluation is not None:
                 # Save chat evaluation to a file
-                with open(f'{directory}/{start_time_str}_chat_evaluation.json', 'w') as f:
+                with open(f'{directory}/chat_evaluation.json_{start_time_str}', 'w') as f:
                     json.dump(chat_evaluation, f)
 
         #   timer_thread.join()
