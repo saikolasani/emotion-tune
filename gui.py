@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QHBoxLayout, QSpinBox, QMessageBox, QDialog, QPushButton, QCheckBox, QMainWindow, QTabWidget, QWidget, QVBoxLayout, \
-    QTextEdit, QLineEdit, QLabel, QVBoxLayout, QSizePolicy
+    QTextEdit, QLineEdit, QLabel, QVBoxLayout, QSizePolicy, QSpacerItem
 from PyQt5.QtCore import Qt, QObject, pyqtSignal, QTimer, QSize
 from PyQt5.QtGui import QImage, QPixmap, QTransform
 
@@ -23,7 +23,7 @@ def create_chat_evaluation():
         def __init__(self):
             super().__init__()
             self.setWindowTitle("Chat Evaluation")
-            self.setGeometry(300, 300, 400, 200)
+            self.setGeometry(300, 300, 400, 300)
             self.layout = QVBoxLayout()
 
             # Helpfulness Rating
@@ -31,18 +31,25 @@ def create_chat_evaluation():
             self.helpfulness_rating = QSpinBox()
             self.helpfulness_rating.setRange(1, 10)
             self.layout.addWidget(self.helpfulness_rating)
+            self.layout.addWidget(QLabel("Provides valuable assistance to the original poster"))
+            self.layout.addWidget(QLabel("1 = no assistance, 10 = excellent assistance"))
 
             # Repetitiveness Rating
             self.layout.addWidget(QLabel("Repetitiveness:"))
             self.repetitiveness_rating = QSpinBox()
             self.repetitiveness_rating.setRange(1, 10)
             self.layout.addWidget(self.repetitiveness_rating)
+            self.layout.addWidget(QLabel("Avoids unnecessary repetition"))
+            self.layout.addWidget(QLabel("1 = excessively repetitive, 10 = not repetitive"))
 
-            # Easy-to-understand Rating
+            # Easy-to-understand Rating (renamed to Intent)
             self.layout.addWidget(QLabel("Intent:"))
             self.intent_rating = QSpinBox()
             self.intent_rating.setRange(1, 10)
             self.layout.addWidget(self.intent_rating)
+            self.layout.addWidget(QLabel("Accurately grasps the users’s intent"))
+            self.layout.addWidget(QLabel("1 = misinterprets the user’s intent, 10 = perfectly understands the user’s "
+                                         "intent"))
 
             # Submit Button
             self.submit_button = QPushButton("Submit")
@@ -78,7 +85,7 @@ def create_emotion_survey(title="Emotion Survey", pre_chat=False):
 
             # First question: Current feelings
             current_layout = QVBoxLayout()
-            prompt_label_current = QLabel("How are you feeling right now?(Choose as many as you like)")
+            prompt_label_current = QLabel("How are you feeling right now? (Choose as many as you like)")
             current_layout.addWidget(prompt_label_current)
 
             self.current_emotion_checkboxes = []
@@ -95,20 +102,31 @@ def create_emotion_survey(title="Emotion Survey", pre_chat=False):
                 self.current_emotion_checkboxes.append(checkbox)
                 current_layout.addWidget(checkbox)
 
+            # Add spacer to push the current feelings section to the top
+            current_layout.addItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
+
             # Add current layout to the main horizontal layout
             horizontal_layout.addLayout(current_layout)
 
-            # Second question: Desired feelings (only if include_desired is True)
+            # Second question: Desired feelings (only if pre_chat is True)
             if pre_chat:
                 desired_layout = QVBoxLayout()
-                prompt_label_desired = QLabel("How would you like to be feeling?(Choose as many as you like)")
+                prompt_label_desired = QLabel("How would you like to be feeling? (Choose as many as you like)")
                 desired_layout.addWidget(prompt_label_desired)
 
                 self.desired_emotion_checkboxes = []
-                for emotion in emotions:
+                desired_emotions = [
+                    "Surprised", "Excited", "Proud", "Grateful",
+                    "Impressed", "Hopeful", "Confident", "Anticipating", "Caring",
+                    "Joyful", "Prepared", "Content", "Trusting", "Faithful"
+                ]
+                for emotion in desired_emotions:
                     checkbox = QCheckBox(emotion)
                     self.desired_emotion_checkboxes.append(checkbox)
                     desired_layout.addWidget(checkbox)
+
+                # Add spacer to push the desired feelings section to the top
+                desired_layout.addItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
                 # Add desired layout to the main horizontal layout
                 horizontal_layout.addLayout(desired_layout)
@@ -121,6 +139,7 @@ def create_emotion_survey(title="Emotion Survey", pre_chat=False):
             self.layout.addWidget(self.submit_button)
 
             self.setLayout(self.layout)
+
         def submit_survey(self):
             current_emotions = [cb.text() for cb in self.current_emotion_checkboxes if cb.isChecked()]
             if pre_chat:
