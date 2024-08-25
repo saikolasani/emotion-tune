@@ -1,9 +1,7 @@
-# video chat with OpenAI models (pipe real-time emotion logs along with user's chats)
-
-from PyQt5.QtWidgets import QApplication, QDialog # GUI uses PyQt
-from PyQt5.QtCore import QThread # videoplayer lives in a QThread
+from PyQt5.QtWidgets import QApplication, QDialog  # GUI uses PyQt
+from PyQt5.QtCore import QThread  # videoplayer lives in a QThread
 from gui import ChatApp, VideoPlayerWorker, create_emotion_survey, create_chat_evaluation
-from emili_core_old_with_logging import * # core threading logic
+from emili_core_old_with_logging import *  # core threading logic
 
 import sys
 import argparse
@@ -12,23 +10,44 @@ import threading
 import time
 from datetime import datetime
 import os
+import json
 
-from openai import OpenAI
-client = OpenAI()
+# Add your model clients here
+from openai import OpenAI  # OpenAI client
+import anthropic
+
 
 if __name__ == "__main__":
 
     app = QApplication(sys.argv)
+
+    parser = argparse.ArgumentParser(description='Real-time video chat with emotion analysis')
+    parser.add_argument('--model', type=str, default='openai', choices=['openai', 'claude'],
+                        help='Choose the model to use (openai or claude)')
+    parser.add_argument('-c', '--camera_id', type=int, default=0, help='Camera device ID')
+    parser.add_argument('-o', '--offset', type=float, default=0.1, help='Scaled offset to be added to bounding boxes')
+    args = parser.parse_args()
+
+    vision_model_name = "gpt-4-vision-preview"
+
+    # Initialize the model based on the user's choice
+    if args.model == 'openai':
+        client = OpenAI()
+        model_name = "gpt-4-0125-preview"
+        secondary_model_name = "gpt-3.5-turbo-0125"
+        vision_model_name = "gpt-4-vision-preview"
+    elif args.model == 'claude':
+        client = anthropic.Anthropic()
+        model_name = "claude-3-5-sonnet-20240620"
+        secondary_model_name = "claude-3-haiku-20240307"
+        vision_model_name = "claude-3-5-sonnet-20240620"
 
     # Show the Pre-Chat Emotion Survey
     pre_survey_emotions = create_emotion_survey(title="Pre-Chat Emotion Survey", pre_chat=True)
 
     if pre_survey_emotions is not None:
 
-        # Initialize model parameters and paths
-        model_name = "gpt-4-0125-preview"  # start with a good model
-        vision_model_name = "gpt-4-vision-preview"  # can this take regular text inputs too?
-        secondary_model_name = "gpt-3.5-turbo-0125"  # switch to a cheaper model if the conversation gets too long
+        # Initialize paths and settings
         max_context_length = 16000
         start_time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
         start_time = time.time()  # all threads can access this, no need to pass it!
@@ -46,19 +65,15 @@ if __name__ == "__main__":
         with open(f'{directory}/pre_chat_emotions.json_{start_time_str}', 'w') as f:
             json.dump(pre_survey_emotions, f)
 
-        snapshot_path = "snapshot"  # snapshots of camera frames sent to OpenAI are written here
+        snapshot_path = "snapshot"  # snapshots of camera frames sent to the model are written here
         if not os.path.exists(snapshot_path):
             os.makedirs(snapshot_path)
-        if (use_tts):
+
+        if use_tts:
             tts_path = "tts_audio"  # temporary storage for text-to-speech audio files
             if not os.path.exists(tts_path):
                 os.makedirs(tts_path)
 
-        parser = argparse.ArgumentParser(description='Real-time face classifier')
-        parser.add_argument('-c', '--camera_id', type=int, default=0, help='Camera device ID')
-        parser.add_argument('-o', '--offset', type=float, default=0.1,
-                            help='Scaled offset to be added to bounding boxes')
-        args = parser.parse_args()
         camera = Camera(args.camera_id)
 
         chat_window_dims = [600, 600]  # width, height
@@ -132,8 +147,6 @@ if __name__ == "__main__":
                 with open(f'{directory}/chat_evaluation.json_{start_time_str}', 'w') as f:
                     json.dump(chat_evaluation, f)
 
-        #   timer_thread.join()
-        #   print("Timer thread joined.") # won't join while sleeping
         print("Video thread closed.")
         new_chat_event.set()  # signal assembler thread to stop waiting
         assembler_thread.join()
@@ -146,8 +159,6 @@ if __name__ == "__main__":
         print("EMA thread joined.")
         tick_thread.join()
         print("Tick thread joined.")
-
-
 
         print("Session ended.")
     else:
