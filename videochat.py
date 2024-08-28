@@ -26,7 +26,7 @@ if __name__ == "__main__":
     if pre_survey_emotions is not None:
 
         # Initialize model parameters and paths
-        model_name = "gpt-4-0125-preview"  # start with a good model
+        model_name = "claude-3-sonnet-20240229"  # start with a good model
         vision_model_name = "gpt-4-vision-preview"  # can this take regular text inputs too?
         secondary_model_name = "gpt-3.5-turbo-0125"  # switch to a cheaper model if the conversation gets too long
         max_context_length = 16000
@@ -75,11 +75,14 @@ if __name__ == "__main__":
         EMA_thread = threading.Thread(target=EMA_thread, args=(start_time, snapshot_path, pipeline), daemon=True)
         EMA_thread.start()
 
+        use_anthropic = True  # use anthropic API for emotion detection
+        print(f"Anthropic value: {use_anthropic}")  # Add this line
         sender_thread = threading.Thread(
             target=sender_thread,
             args=(model_name, vision_model_name, secondary_model_name, max_context_length, gui_app, transcript_path,
-                  start_time_str, start_time),
+                start_time_str, start_time, use_anthropic),
             daemon=True)
+        
         sender_thread.start()
 
         assembler_thread = threading.Thread(target=assembler_thread,
