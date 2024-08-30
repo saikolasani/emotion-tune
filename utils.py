@@ -81,12 +81,12 @@ def get_Claude_response(messages, model="claude-3-sonnet-20240229", temperature=
             if role == 'system':
                 if isinstance(content, str):
                     system_messages.append(content)
-                    print(f"Debug: Found text-based system message {idx+1}: {content[:50]}...")
+                    #print(f"Debug: Found text-based system message {idx+1}: {content[:50]}...")
                 else:
                     print(f"Debug: Skipping non-text system message {idx+1}: {type(content)}")
             else:
                 api_messages.append({"role": role, "content": content})
-                print(f"Debug: Added {role} message {idx+1} to API messages")
+                #print(f"Debug: Added {role} message {idx+1} to API messages")
 
         if model == "gpt-4-vision-preview": model = "claude-3-sonnet-20240229"
         kwargs = {
