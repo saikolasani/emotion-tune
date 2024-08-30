@@ -15,7 +15,7 @@ import math
 import cProfile
 import pstats
 
-from emili_core import time_since
+from emili_core_old_with_logging import time_since
 
 
 def create_chat_evaluation():

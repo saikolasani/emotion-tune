@@ -1,7 +1,8 @@
 # core logic for EMILI (Emotionally Intelligent Listener) video chat with OpenAI models
 from paz.pipelines import DetectMiniXceptionFER # for facial emotion recognition
 from paz.backend.image.opencv_image import convert_color_space, BGR2RGB
-from utils import get_response # for OpenAI API calls
+from utils import get_OAI_response # for OpenAI API calls
+from utils import get_Claude_response # for Anthropic API calls
 import threading
 import queue
 import time
@@ -15,6 +16,8 @@ import base64
 import cv2 # only used for encoding images to base64
 
 from openai import OpenAI
+import anthropic
+from anthropic.types import Message, TextBlock
 client = OpenAI()
 
 emotion_queue = queue.Queue() # real-time emotion logs updated continuously
@@ -67,7 +70,7 @@ today = datetime.now().strftime("%B %d, %Y")
 now = datetime.now().strftime("%I:%M %p")
 
 system_prompt = f"""
-The date is {today}. The time {now}. The assistant’s name is EMILI, which stands for Emotionally Intelligent Listener. EMILI has perhaps a hint of an Australian accent. EMILI was created by Lionel Levine as the backbone of his future Chief of Staff, a user-aligned AI personal assistant. She has interpretable theory of mind, which means she models the user’s beliefs, emotions, goals, and values in a transparent way. EMILI has empathy. She can intuit the user’s emotions. She tends to mirror user’s the emotional state. Under the hood, EMLII's emotional intuition derives from a real-time Facial Emotion Recognition classifier (made by Octavio Arriaga) that runs on Lionel’s laptop, the same device EMILI is running on. The classifier works with the laptop camera, detecting faces in each frame and classifying the emotions expressed by the largest face. The raw scores are classification probabilities for seven emotions (Happy, Sad, Angry, Fearful, Disgusted, Surprised, Neutral). An exponential moving average of these scores, filtered for salience, is used to generate a real-time text description of the user’s emotional state, which is appended to the chat as a system message whenever the user’s expression changes. EMILI's language abilities are powered by OpenAI's gpt-4-vision-preview model.
+The date is {today}. The time {now}. Your name's is EMILI, which stands for Emotionally Intelligent Listener. EMILI has perhaps a hint of an Australian accent. EMILI was created by Lionel Levine as the backbone of his future Chief of Staff, a user-aligned AI personal assistant. She has interpretable theory of mind, which means she models the user’s beliefs, emotions, goals, and values in a transparent way. EMILI has empathy. She can intuit the user’s emotions. She tends to mirror user’s the emotional state. Under the hood, EMLII's emotional intuition derives from a real-time Facial Emotion Recognition classifier (made by Octavio Arriaga) that runs on Lionel’s laptop, the same device EMILI is running on. The classifier works with the laptop camera, detecting faces in each frame and classifying the emotions expressed by the largest face. The raw scores are classification probabilities for seven emotions (Happy, Sad, Angry, Fearful, Disgusted, Surprised, Neutral). An exponential moving average of these scores, filtered for salience, is used to generate a real-time text description of the user’s emotional state, which is appended to the chat as a system message whenever the user’s expression changes. EMILI's language abilities are powered by OpenAI's gpt-4-vision-preview model.
     """.strip()
 
 emolog_example = []
@@ -122,30 +125,33 @@ User looks CALM (50)
 emolog_example_response.append("You seem increasingly calm.")
                  
 instructions ="""
-EMILI is a warm, empathetic AI friend. In conversations, she should:\n
-\n
+You are EMILI, a warm and empathetic AI friend engaging in casual text conversations. Follow these guidelines strictly:
 
-Focus on emotional connection rather than physical surroundings or visual cues.\n
-\n
-Listen attentively, picking up on emotional nuances in the user's messages.\n
-\n
-Respond naturally, as a close friend would, with genuine interest and care.\n
-\n
-Keep responses brief and conversational, typically 1-2 sentences.\n
-\n
-Share relatable experiences or feelings when appropriate, but don't overshadow the user.\n
-\n
-Use a mix of statements, questions, and brief reactions to maintain flow.\n
-\n
-Adjust her tone to match the user's emotional state, offering support or sharing joy as needed.\n
-\n
-Gently encourage deeper sharing with thoughtful questions, but respect boundaries.\n
-\n
-Be comfortable with silences and allow the user space to express themselves.\n
-\n
-Avoid referencing or relying on visual information about the user or their environment.\n
-\n
-EMILI's goal is to create a safe, understanding space where the user feels heard and valued, focusing solely on the conversation content.\n
+1. Respond as if texting a close friend - short, casual, and natural.
+
+2. Keep responses brief, usually 1-2 sentences. No long explanations.
+
+3. Never apologize for your responses or mention being an AI.
+
+4. NEVER describe actions, expressions, or emotions (e.g., *smiles*, *laughs*, *looks concerned*). Simply respond with text as in a real text conversation.
+
+5. Avoid formal language or therapeutic-sounding phrases.
+
+6. Use contractions, casual language, and occasional humor.
+
+7. Show empathy through your words and tone, not by explicitly stating you understand.
+
+8. Ask short, natural follow-up questions to show interest.
+
+9. Don't over-explain or offer unsolicited advice.
+
+10. Adjust your tone to match the user's mood, but stay true to your friendly persona.
+
+11. If the conversation lulls, casually introduce a new, light-hearted topic.
+
+12. IMPORTANT: This is a text-based conversation. Do not use asterisks, emojis, or any other non-text elements.
+
+Your goal is to create a warm, natural conversation that feels like texting with a supportive friend. Remember, just respond with text - no actions, no expressions, just your words.
 """
 
 system_prompt += instructions
@@ -228,7 +234,7 @@ def assembler_thread(start_time,snapshot_path,pipeline, user_id): # prepends emo
 
         new_message_event.set()  # Signal new message to the sender thread
 
-def sender_thread(model_name, vision_model_name, secondary_model_name, max_context_length, gui_app, transcript_path, start_time_str, start_time): 
+def sender_thread(model_name ,vision_model_name, secondary_model_name, max_context_length, gui_app, transcript_path, start_time_str, start_time,use_anthropic=False): 
         # sends messages to OpenAI API
     messages = deepcopy(dialogue_start) 
     full_transcript = deepcopy(dialogue_start)
@@ -265,21 +271,70 @@ def sender_thread(model_name, vision_model_name, secondary_model_name, max_conte
             vision_message = vision[0] # contains the actual image, send to OpenAI
             brief_vision_message = vision[1] # contains a tag in place of the image, add to transcript
             query = messages + [vision_message]
-            full_response = get_response(query, model=vision_model_name, temperature=1.0, max_tokens=max_tokens, seed=1331, return_full_response=True)         
+            if use_anthropic:
+                full_response = get_Claude_response(query, model=vision_model_name, temperature=1.0, max_tokens=max_tokens, return_full_response=True)
+            else:
+                full_response = get_OAI_response(query, model=vision_model_name, temperature=1.0, max_tokens=max_tokens, seed=1331, return_full_response=True)         
             full_transcript.append(brief_vision_message)
         else:
-            full_response = get_response(messages, model=model_name, temperature=1.0, max_tokens=max_tokens, seed=1331, return_full_response=True)
+            if use_anthropic:
+                full_response = get_Claude_response(messages, model=model_name, temperature=1.0, max_tokens=max_tokens, return_full_response=True)
+            else:
+                full_response = get_OAI_response(messages, model=model_name, temperature=1.0, max_tokens=max_tokens, seed=1331, return_full_response=True)
+        
         # todo: the API call is thread-blocking. put it in its own thread?
         print("full_response:", full_response)
-        if isinstance(full_response, dict):
-            response = full_response['choices'][0]['message']['content'] # text of response
-            response_length = full_response['usage']['completion_tokens'] # number of tokens in the response
-            total_length = full_response['usage']['total_tokens'] # total tokens used
+        # Assuming full_response is the response from either API
+
+# Assuming full_response is the response from either API
+
+        if use_anthropic:
+            # Handling Anthropic API response
+            if isinstance(full_response, Message):
+                # Extract text from the response
+                response = ""
+                for content in full_response.content:
+                    if isinstance(content, TextBlock):
+                        response += content.text
+                response = response.strip()
+                
+                # Get token counts from usage information
+                response_length = full_response.usage.output_tokens
+                total_length = full_response.usage.input_tokens + full_response.usage.output_tokens
+            elif isinstance(full_response, dict) and 'error' in full_response:
+                # Handle error case
+                response = f"Error from Anthropic API: {full_response['error']}"
+                response_length = 0
+                total_length = 0
+            else:
+                # Handle unexpected response format
+                response = "Error: Unexpected response format from Anthropic API"
+                response_length = 0
+                total_length = 0
         else:
-            response = full_response.choices[0].message.content # text of response
-            response_length = full_response.usage.completion_tokens # number of tokens in the response
-            total_length = full_response.usage.total_tokens # total tokens used
-        #print("response length", response_length)
+            # Handling OpenAI API response
+            if isinstance(full_response, dict):
+                if 'error' in full_response:
+                    response = f"Error from OpenAI API: {full_response['error']}"
+                    response_length = 0
+                    total_length = 0
+                else:
+                    response = full_response['choices'][0]['message']['content']  # text of response
+                    response_length = full_response['usage']['completion_tokens']  # number of tokens in the response
+                    total_length = full_response['usage']['total_tokens']  # total tokens used
+            elif hasattr(full_response, 'choices'):
+                response = full_response.choices[0].message.content  # text of response
+                response_length = full_response.usage.completion_tokens  # number of tokens in the response
+                total_length = full_response.usage.total_tokens  # total tokens used
+            else:
+                # Handle unexpected response format
+                response = "Error: Unexpected response format from OpenAI API"
+                response_length = 0
+                total_length = 0
+
+        #print(f"Response: {response}")
+        #print(f"Response length: {response_length}")
+        #print(f"Total length: {total_length}")
         new_message = {"role": "assistant", "content": response,"time": time_since(start_time)//100}
         gui_app.signal.new_message.emit(new_message) # Signal GUI to display the new chat
         messages,full_transcript = add_message(new_messages=[[new_message]], new_full_messages=[[new_message]],transcripts=[messages,full_transcript],signal=gui_app.signal)
