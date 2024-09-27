@@ -9,3 +9,4 @@ __pycache__/*
 test.py
 NRC-VAD-Lexicon.txt
 regression_data.csv
+.env

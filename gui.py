@@ -108,6 +108,7 @@ def create_emotion_survey(title="Emotion Survey", pre_chat=False):
             self.text_input.setPlaceholderText("Emotion words or short phrases, separated by commas")
             current_layout.addWidget(self.text_input)
             
+
             # Add spacer to push the current feelings section to the top
             current_layout.addItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
             
@@ -148,20 +149,34 @@ def create_emotion_survey(title="Emotion Survey", pre_chat=False):
 
             self.setLayout(self.layout)
 
-        def submit_survey(self):
+        
+        def submit_survey(self, pre_chat=True):
+            # Get the emotions from checkboxes
             current_emotions = [cb.text() for cb in self.current_emotion_checkboxes if cb.isChecked()]
+    
             if pre_chat:
                 desired_emotions = [cb.text() for cb in self.desired_emotion_checkboxes if cb.isChecked()]
             else:
                 desired_emotions = []
 
+            # Get the user input from the text input field, split by comma, and strip whitespace
+            user_input_emotions = [e.strip() for e in self.text_input.text().split(",") if e.strip()]
+            
+            # Combine emotions from checkboxes and text input field
+            current_emotions.extend(user_input_emotions)
+
+            # Ensure that at least one emotion is selected or entered
             if current_emotions:
                 self.selected_emotions['current'] = current_emotions
                 if pre_chat:
                     self.selected_emotions['desired'] = desired_emotions
-                self.accept()  # Close the survey dialog
+                
+                # Close the survey dialog (assuming it is a modal dialog)
+                self.accept()
             else:
-                QMessageBox.warning(self, "Incomplete Survey", "Please select at least one emotion for each question.")
+                # Show a warning message if no emotions were selected or entered
+                QMessageBox.warning(self, "Incomplete Survey", "Please select or enter at least one emotion for each question.")
+
 
     dialog = EmotionSurvey()
     result = dialog.exec_()
