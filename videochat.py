@@ -1,3 +1,8 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()
+os.getenv("OPENAI_API_KEY")
+os.getenv("ANTHROPIC_API_KEY")
 # video chat with OpenAI models (pipe real-time emotion logs along with user's chats)
 
 from PyQt5.QtWidgets import QApplication, QDialog # GUI uses PyQt
@@ -5,19 +10,20 @@ from PyQt5.QtCore import QThread # videoplayer lives in a QThread
 from gui import ChatApp, VideoPlayerWorker, create_emotion_survey, create_chat_evaluation
 from emili_core_old_with_logging import * # core threading logic
 
+
 import sys
 import argparse
 from paz.backend.camera import Camera
 import threading
 import time
 from datetime import datetime
-import os
+
 
 from openai import OpenAI
+
 client = OpenAI()
 
 if __name__ == "__main__":
-
     app = QApplication(sys.argv)
 
     # Show the Pre-Chat Emotion Survey
