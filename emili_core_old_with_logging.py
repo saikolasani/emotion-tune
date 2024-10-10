@@ -1,8 +1,8 @@
 # core logic for EMILI (Emotionally Intelligent Listener) video chat with OpenAI models
 from paz.pipelines import DetectMiniXceptionFER # for facial emotion recognition
 from paz.backend.image.opencv_image import convert_color_space, BGR2RGB
-from utils import get_OAI_response # for OpenAI API calls
-from utils import get_Claude_response # for Anthropic API calls
+from utils.utils import get_OAI_response # for OpenAI API calls
+from utils.utils import get_Claude_response # for Anthropic API calls
 import threading
 import queue
 import time

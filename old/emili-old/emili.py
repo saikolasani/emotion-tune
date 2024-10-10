@@ -18,7 +18,7 @@ import os
 
 import sys
 sys.path.append('/Users/jhana/Dropbox/Private/LAISR/mood')
-from utils import get_response
+from utils.utils import get_response
 
 from openai import OpenAI
 client = OpenAI()

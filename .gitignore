@@ -5,8 +5,10 @@ snapshot/*
 Dataset prep/*
 paz/*
 __pycache__/*
+utils/__pycache__/*
 
 test.py
 NRC-VAD-Lexicon.txt
 regression_data.csv
 .env
+.DS_store
