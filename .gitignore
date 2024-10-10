@@ -11,3 +11,4 @@ test.py
 NRC-VAD-Lexicon.txt
 regression_data.csv
 .env
+.DS_store

@@ -19,7 +19,7 @@ import pygame # for audio playback of text-to-speech
 from datetime import datetime
 
 sys.path.append('/Users/jhana/Dropbox/Private/LAISR/mood')
-from utils import get_response
+from utils.utils import get_response
 
 from openai import OpenAI
 client = OpenAI()
